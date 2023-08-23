@@ -81,7 +81,7 @@ DEFINE_bool(inner_iterations, false, "Use inner iterations to non-linearly "
 DEFINE_string(blocks_for_inner_iterations, "automatic", "Options are: "
               "automatic, cameras, points, cameras,points, points,cameras");
 
-DEFINE_string(linear_solver, "sparse_schur", "Options are: "
+DEFINE_string(linear_solver, "sparse_normal_cholesky", "Options are: "
               "sparse_schur, dense_schur, iterative_schur, "
               "sparse_normal_cholesky, dense_qr, dense_normal_cholesky, "
               "and cgnr.");
@@ -104,17 +104,17 @@ DEFINE_string(ordering_type, "amd", "Options are: amd, nesdis");
 DEFINE_string(linear_solver_ordering, "user",
               "Options are: automatic and user");
 
-DEFINE_bool(use_quaternions, false, "If true, uses quaternions to represent "
+DEFINE_bool(use_quaternions, true, "If true, uses quaternions to represent "
             "rotations. If false, angle axis is used.");
-DEFINE_bool(use_manifolds, false, "For quaternions, use a manifold.");
-DEFINE_bool(robustify, false, "Use a robust loss function.");
+DEFINE_bool(use_manifolds, true, "For quaternions, use a manifold.");
+DEFINE_bool(robustify, true, "Use a robust loss function.");
 
 DEFINE_double(eta, 1e-2, "Default value for eta. Eta determines the "
               "accuracy of each linear solve of the truncated newton step. "
               "Changing this parameter can affect solve performance.");
 
-DEFINE_int32(num_threads, -1, "Number of threads. -1 = std::thread::hardware_concurrency.");
-DEFINE_int32(num_iterations, 5, "Number of iterations.");
+DEFINE_int32(num_threads, 1, "Number of threads. -1 = std::thread::hardware_concurrency.");
+DEFINE_int32(num_iterations, 38, "Number of iterations.");
 DEFINE_int32(max_linear_solver_iterations, 500, "Maximum number of iterations"
             " for solution of linear system.");
 DEFINE_double(spse_tolerance, 0.1,
@@ -324,7 +324,7 @@ void BuildProblem(BALProblem* bal_problem, Problem* problem) {
 
     // If enabled use Huber's loss function.
     LossFunction* loss_function =
-        CERES_GET_FLAG(FLAGS_robustify) ? new HuberLoss(1.0) : nullptr;
+        CERES_GET_FLAG(FLAGS_robustify) ? new HuberLoss(2.0) : nullptr;
 
     // Each observation corresponds to a pair of a camera and a point
     // which are identified by camera_index()[i] and point_index()[i]
@@ -364,7 +364,7 @@ void SolveProblem(const char* filename) {
   Solver::Options options;
   SetSolverOptionsFromFlags(&bal_problem, &options);
   options.gradient_tolerance = 1e-16;
-  options.function_tolerance = 1e-16;
+  options.function_tolerance = 1e-6;
   options.parameter_tolerance = 1e-16;
   Solver::Summary summary;
   Solve(options, &problem, &summary);
