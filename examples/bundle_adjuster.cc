@@ -307,6 +307,10 @@ void BuildProblem(BALProblem* bal_problem, Problem* problem) {
   const int camera_block_size = bal_problem->camera_block_size();
   double* points = bal_problem->mutable_points();
   double* cameras = bal_problem->mutable_cameras();
+    
+  // If enabled use Huber's loss function.
+  LossFunction* loss_function =
+    CERES_GET_FLAG(FLAGS_robustify) ? new HuberLoss(2.0) : nullptr;
 
   // Observations is 2*num_observations long array observations =
   // [u_1, u_2, ... , u_n], where each u_i is two dimensional, the x
@@ -321,10 +325,6 @@ void BuildProblem(BALProblem* bal_problem, Problem* problem) {
                               observations[2 * i + 0], observations[2 * i + 1])
                         : SnavelyReprojectionError::Create(
                               observations[2 * i + 0], observations[2 * i + 1]);
-
-    // If enabled use Huber's loss function.
-    LossFunction* loss_function =
-        CERES_GET_FLAG(FLAGS_robustify) ? new HuberLoss(2.0) : nullptr;
 
     // Each observation corresponds to a pair of a camera and a point
     // which are identified by camera_index()[i] and point_index()[i]
